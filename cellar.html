@@ -761,25 +761,60 @@ async function loadAll() {
   const files = ['wines.json','drunk.json','wishlist.json','varieties.json'];
   const defaults = [[], [], [], DEFAULT_VARIETIES];
   const targets = [wines, drunk, wishlist, varieties];
+  // Legacy key fallbacks from older app versions
+  const legacyKeys = ['cellar_wines.json','cellar_drunk.json','cellar_wishlist.json','cellar_varieties.json'];
+
   for (let i = 0; i < files.length; i++) {
+    let loaded = null;
+
+    // 1. Try GitHub first
     const d = await ghGet(files[i]);
-    if (d) {
-      try { targets[i].length = 0; JSON.parse(atob(d.content.replace(/\n/g,''))).forEach(x => targets[i].push(x)); ghShas[files[i]] = d.sha; } catch {}
-    } else {
-      const local = localStorage.getItem('cellar_'+files[i]);
-      if (local) try { targets[i].length=0; JSON.parse(local).forEach(x=>targets[i].push(x)); } catch {}
-      else defaults[i].forEach(x=>targets[i].push(x));
+    if (d && d.content) {
+      try {
+        const parsed = JSON.parse(atob(d.content.replace(/\n/g,'')));
+        if (Array.isArray(parsed)) { loaded = parsed; ghShas[files[i]] = d.sha; }
+      } catch {}
     }
+
+    // 2. Fall back to localStorage (try both key formats)
+    if (!loaded) {
+      for (const key of ['cellar_'+files[i], legacyKeys[i], files[i]]) {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) { loaded = parsed; break; }
+          } catch {}
+        }
+      }
+    }
+
+    // 3. Only use defaults if nothing found anywhere — never overwrite real data with empty
+    if (loaded && loaded.length > 0) {
+      targets[i].length = 0;
+      loaded.forEach(x => targets[i].push(x));
+    } else if (!loaded) {
+      // Truly nothing found — use defaults (first run)
+      targets[i].length = 0;
+      defaults[i].forEach(x => targets[i].push(x));
+    }
+    // If loaded is [] (empty array from GitHub) and localStorage has data, keep localStorage data
   }
   saveLocal(); renderAll();
 }
 async function saveFile(file, data) {
+  // Always save to localStorage first — GitHub is secondary
   localStorage.setItem('cellar_'+file, JSON.stringify(data));
+  // Also write under legacy key so old app versions can still read
+  localStorage.setItem('cellar_'+file.replace('.json','') + '.json', JSON.stringify(data));
   const sha = await ghPut(file, data, ghShas[file]);
   if (sha) ghShas[file] = sha;
 }
 function saveLocal() {
-  ['wines','drunk','wishlist','varieties'].forEach(k => localStorage.setItem('cellar_'+k+'.json', JSON.stringify(eval(k))));
+  ['wines.json','drunk.json','wishlist.json','varieties.json'].forEach((f,i) => {
+    const data = [wines,drunk,wishlist,varieties][i];
+    localStorage.setItem('cellar_'+f, JSON.stringify(data));
+  });
 }
 async function saveSetup() {
   ghUser = document.getElementById('s-user').value.trim();
