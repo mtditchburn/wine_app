@@ -520,7 +520,8 @@ input[type=range] { width: 100%; accent-color: var(--red-wine); cursor: pointer;
         <label>Location</label>
         <select id="cf-loc-type" onchange="renderCellarLocFields()">
           <option value="rack">Pantry rack</option>
-          <option value="storage">Pantry storage</option>
+          <option value="storage-ground">Pantry storage — ground</option>
+          <option value="storage-shelf">Pantry storage — third shelf</option>
           <option value="fridge">Fridge</option>
         </select>
       </div>
@@ -919,14 +920,18 @@ function isReady(w) {
 function slotLabel(slot) {
   if (!slot) return null;
   if (slot.type==='rack') return slot.row!==undefined ? `${ROW_NAMES[slot.row]} row, ${COL_NAMES[slot.col]}` : 'Pantry rack';
-  if (slot.type==='storage') return 'Pantry storage';
+  if (slot.type==='storage-ground') return 'Pantry storage — ground';
+  if (slot.type==='storage-shelf') return 'Pantry storage — third shelf';
+  if (slot.type==='storage') return 'Pantry storage'; // legacy
   if (slot.type==='fridge') return 'Fridge';
   return slot.label||'Unknown';
 }
 function locGroup(w) {
   if (!w.slot) return 'Unlocated';
   if (w.slot.type==='rack') return 'Pantry rack';
-  if (w.slot.type==='storage') return 'Pantry storage';
+  if (w.slot.type==='storage-ground') return 'Pantry storage — ground';
+  if (w.slot.type==='storage-shelf') return 'Pantry storage — third shelf';
+  if (w.slot.type==='storage') return 'Pantry storage'; // legacy
   if (w.slot.type==='fridge') return 'Fridge';
   return 'Other';
 }
@@ -1090,7 +1095,7 @@ function getFiltered(list, chip, ready, priceStep, varFilter, unrated, q) {
 // ── Render helpers ──
 function renderRows(list, onRowClick, onEdit, onAction, actionIcon, actionLabel) {
   if (!list.length) return '';
-  const order = ['Pantry rack','Pantry storage','Fridge','Other','Unlocated'];
+  const order = ['Pantry rack','Pantry storage — ground','Pantry storage — third shelf','Pantry storage','Fridge','Other','Unlocated'];
   const groups = {};
   list.forEach(w => { const g = locGroup(w)||'Unlocated'; if(!groups[g])groups[g]=[]; groups[g].push(w); });
   let html='';
@@ -1187,7 +1192,11 @@ function openCellarForm(id) {
     document.getElementById('cf-notes').value=w.notes||'';
     document.getElementById('cf-del-btn').style.display='';
     if (w.photo) { cellarPhotoData=w.photo; setPhotoArea('cellar-photo-area','cellar-photo-camera','cellar-photo-gallery',w.photo); }
-    if (w.slot) { document.getElementById('cf-loc-type').value=w.slot.type; if(w.slot.type==='rack') cellarSlot=w.slot; }
+    if (w.slot) {
+      const lt = w.slot.type === 'storage' ? 'storage-ground' : w.slot.type;
+      document.getElementById('cf-loc-type').value = lt;
+      if (lt==='rack') cellarSlot=w.slot;
+    }
   } else {
     document.getElementById('cellar-form-title').textContent='Add a wine';
     initDrums('cf-drum-from','cf-drum-to','cf-window-display','');
@@ -1199,7 +1208,6 @@ function openCellarForm(id) {
 function renderCellarLocFields() {
   const t = document.getElementById('cf-loc-type').value;
   document.getElementById('cf-loc-rack').style.display = t==='rack' ? '' : 'none';
-  if (t==='rack') buildRack('cf-rack-col-labels','cf-rack-row-lbls','cf-rack-grid','cf-rack-hint', cellarEditingId);
 }
 async function saveCellarWine() {
   const name = document.getElementById('cf-name').value.trim();
@@ -1594,6 +1602,12 @@ function applyMoreFilters() {
   morePriceStep=parseInt(document.getElementById('price-slider').value);
   if (moreContext==='cellar') cellarReady=document.getElementById('more-ready-toggle').checked;
   if (moreContext==='drunk') moreUnrated=document.getElementById('more-unrated-toggle').checked;
+  // If variety filter applied, reset colour chip to All so results show immediately
+  if (moreVarieties.length) {
+    const chipFn = {cellar:setCellarChip, drunk:setDrunkChip, wish:setWishChip}[moreContext];
+    const allChip = document.querySelector(`#view-${moreContext} .chip[data-f="all"]`);
+    if (chipFn && allChip) chipFn(allChip);
+  }
   const hasMore=moreVarieties.length||morePriceStep<7;
   document.querySelector(`#view-${moreContext} .more-chip`).classList.toggle('active',hasMore);
   closeO('more-overlay');
@@ -1604,7 +1618,17 @@ function clearMoreFilters() {
   document.querySelectorAll('.type-toggle').forEach(el=>el.classList.remove('on'));
   document.getElementById('price-slider').value=7;
   if (moreContext==='cellar') { cellarReady=true; document.getElementById('more-ready-toggle').checked=true; }
+  if (moreContext==='drunk') { document.getElementById('more-unrated-toggle').checked=false; }
   updatePriceDisplay();
+  // Reset colour chip to All
+  const chipFn = {cellar:setCellarChip, drunk:setDrunkChip, wish:setWishChip}[moreContext];
+  const allChip = document.querySelector(`#view-${moreContext} .chip[data-f="all"]`);
+  if (chipFn && allChip) chipFn(allChip);
+  // Remove active state from More filters chip
+  const moreChip = document.querySelector(`#view-${moreContext} .more-chip`);
+  if (moreChip) moreChip.classList.remove('active');
+  closeO('more-overlay');
+  renderAll();
 }
 
 // ── Overlay helpers ──
