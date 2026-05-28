@@ -250,7 +250,7 @@ input[type=range] { width: 100%; accent-color: var(--red-wine); cursor: pointer;
 .drum-wrap { display: flex; align-items: center; gap: 10px; }
 .drum-col { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
 .drum-label { font-size: 10px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 2px; }
-.drum { height: 220px; overflow-y: scroll; scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch; border-radius: var(--radius-sm); border: 1px solid var(--border-strong); background: var(--input-bg); position: relative; scrollbar-width: none; }
+.drum { height: 132px; overflow-y: scroll; scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch; border-radius: var(--radius-sm); border: 1px solid var(--border-strong); background: var(--input-bg); position: relative; scrollbar-width: none; }
 .drum::-webkit-scrollbar { display: none; }
 .drum-item { height: 44px; display: flex; align-items: center; justify-content: center; scroll-snap-align: center; font-size: 17px; font-weight: 400; color: var(--ink-muted); cursor: pointer; transition: color 0.1s, font-weight 0.1s; flex-shrink: 0; font-family: 'DM Sans', sans-serif; }
 .drum-item.selected { color: var(--ink); font-weight: 500; }
@@ -490,7 +490,11 @@ input[type=range] { width: 100%; accent-color: var(--red-wine); cursor: pointer;
             <option value="NT">NT</option>
           </select>
         </div>
-        <div class="field"><label>Country</label><input type="text" id="cf-country" placeholder="e.g. Australia"></div>
+        <div class="region-wrap">
+          <label>Country</label>
+          <input type="text" class="region-input" id="cf-country" placeholder="e.g. Australia" autocomplete="off" oninput="countryInput(this,'cf-country-dd')" onblur="delayHideDD('cf-country-dd')">
+          <div class="region-dropdown" id="cf-country-dd"></div>
+        </div>
       </div>
       <div class="two-col">
         <div class="field"><label>Price paid ($)</label><input type="number" id="cf-price" placeholder="65"></div>
@@ -608,7 +612,11 @@ input[type=range] { width: 100%; accent-color: var(--red-wine); cursor: pointer;
             <option value="NT">NT</option>
           </select>
         </div>
-        <div class="field"><label>Country</label><input type="text" id="wf-country" placeholder="e.g. Australia"></div>
+        <div class="region-wrap">
+          <label>Country</label>
+          <input type="text" class="region-input" id="wf-country" placeholder="e.g. Australia" autocomplete="off" oninput="countryInput(this,'wf-country-dd')" onblur="delayHideDD('wf-country-dd')">
+          <div class="region-dropdown" id="wf-country-dd"></div>
+        </div>
       </div>
       <div class="two-col">
         <div class="field"><label>Approx. price ($)</label><input type="number" id="wf-price" placeholder="Optional"></div>
@@ -738,7 +746,7 @@ const TYPE_COLORS = { red:'#7a1f35', white:'#a87800', rosé:'#c4637a', sparkling
 const TYPE_BGS = { red:'var(--red-wine-light)', white:'var(--white-wine-light)', rosé:'var(--rose-wine-light)', sparkling:'var(--spark-wine-light)', orange:'rgba(184,92,26,0.12)', dessert:'rgba(122,90,26,0.12)', other:'var(--parchment)' };
 
 // ── State ──
-let wines = [], drunk = [], wishlist = [], varieties = [], regions = [];
+let wines = [], drunk = [], wishlist = [], varieties = [], regions = [], countries = [];
 let cellarChip = 'all', drunkChip = 'all', wishChip = 'all';
 let cellarReady = true, morePriceStep = 7, moreVarieties = [], moreUnrated = false;
 let activeTab = 'cellar', moreContext = 'cellar';
@@ -773,9 +781,9 @@ async function ghPut(file, content, sha) {
   } catch { return null; }
 }
 async function loadAll() {
-  const files    = ['wines.json','drunk.json','wishlist.json','varieties.json','regions.json'];
-  const defaults = [[], [], [], DEFAULT_VARIETIES, []];
-  const targets  = [wines, drunk, wishlist, varieties, regions];
+  const files    = ['wines.json','drunk.json','wishlist.json','varieties.json','regions.json','countries.json'];
+  const defaults = [[], [], [], DEFAULT_VARIETIES, [], []];
+  const targets  = [wines, drunk, wishlist, varieties, regions, countries];
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
@@ -849,8 +857,8 @@ async function saveFile(file, data) {
 }
 
 function saveLocal() {
-  const files   = ['wines.json','drunk.json','wishlist.json','varieties.json','regions.json'];
-  const sources = [wines, drunk, wishlist, varieties, regions];
+  const files   = ['wines.json','drunk.json','wishlist.json','varieties.json','regions.json','countries.json'];
+  const sources = [wines, drunk, wishlist, varieties, regions, countries];
   files.forEach((f, i) => localStorage.setItem('cellar_' + f, JSON.stringify(sources[i])));
 }
 async function saveSetup() {
@@ -1032,6 +1040,38 @@ function deleteRegion(r, ddId, btn) {
   const inputId = ddId.replace('-dd','');
   regionInput(document.getElementById(inputId), ddId);
 }
+
+// ── Country autocomplete ──
+function countryInput(input, ddId) {
+  const q = input.value.toLowerCase().trim();
+  const dd = document.getElementById(ddId);
+  if (!q) { dd.classList.remove('open'); return; }
+  const usedCountries = [...wines,...drunk,...wishlist].map(w=>w.country).filter(Boolean);
+  const matches = countries.filter(c => c.toLowerCase().includes(q));
+  const isNew = q.length >= 2 && !countries.find(c=>c.toLowerCase()===q);
+  const suggestions = [...new Set([...matches, ...(isNew?[input.value.trim()]:[])])].slice(0,8);
+  if (!suggestions.length) { dd.classList.remove('open'); return; }
+  dd.innerHTML = suggestions.map(c => {
+    const isNewItem = !countries.includes(c);
+    const inUse = usedCountries.includes(c);
+    const delDisabled = isNewItem || inUse;
+    const delTitle = inUse ? 'In use — edit that wine first' : isNewItem ? 'Save wine to add' : 'Remove';
+    return `<div class="variety-option"><span class="variety-option-name" onclick="selectCountry('${ddId}','${c.replace(/'/g,"\\'")}',this)">${c}${isNewItem?' <span style="font-size:10px;color:var(--ink-muted)">(new)</span>':''}</span><button class="variety-del${delDisabled?' disabled':''}" title="${delTitle}" onclick="event.stopPropagation();deleteCountry('${c.replace(/'/g,"\\'")}','${ddId}',this)">&times;</button></div>`;
+  }).join('');
+  dd.classList.add('open');
+}
+function selectCountry(ddId, c, el) {
+  const inputId = ddId.replace('-dd','');
+  document.getElementById(inputId).value = c;
+  document.getElementById(ddId).classList.remove('open');
+}
+function deleteCountry(c, ddId, btn) {
+  if (btn.classList.contains('disabled')) return;
+  countries = countries.filter(x=>x!==c);
+  saveFile('countries.json', countries);
+  const inputId = ddId.replace('-dd','');
+  countryInput(document.getElementById(inputId), ddId);
+}
 function getFiltered(list, chip, ready, priceStep, varFilter, unrated, q) {
   return list.filter(w => {
     const wtype = inferType(w.variety||'');
@@ -1128,6 +1168,7 @@ function openCellarForm(id) {
   resetPhotoArea('cellar-photo-area','cellar-photo-camera','cellar-photo-gallery');
   ['cf-name','cf-winery','cf-variety','cf-vintage','cf-region','cf-state','cf-country','cf-notes'].forEach(x=>{ const el=document.getElementById(x); if(el)el.value=''; });
   document.getElementById('cf-region-dd').classList.remove('open');
+  document.getElementById('cf-country-dd').classList.remove('open');
   document.getElementById('cf-price').value='';
   document.getElementById('cf-loc-type').value='rack';
   document.getElementById('cf-del-btn').style.display='none';
@@ -1167,6 +1208,8 @@ async function saveCellarWine() {
   if (variety && !varieties.includes(variety)) { varieties.push(variety); await saveFile('varieties.json', varieties); }
   const region = document.getElementById('cf-region').value.trim();
   if (region && !regions.includes(region)) { regions.push(region); await saveFile('regions.json', regions); }
+  const country = document.getElementById('cf-country').value.trim();
+  if (country && !countries.includes(country)) { countries.push(country); await saveFile('countries.json', countries); }
   const locType = document.getElementById('cf-loc-type').value;
   const slot = locType==='rack' ? (cellarSlot||{type:'rack'}) : {type:locType};
   const wine = { id:cellarEditingId||`w_${Date.now()}`, name, winery:document.getElementById('cf-winery').value.trim(), variety, vintage:document.getElementById('cf-vintage').value.trim(), region:document.getElementById('cf-region').value.trim(), state:document.getElementById('cf-state').value, country:document.getElementById('cf-country').value.trim(), price:document.getElementById('cf-price').value, window:getDrumWindow('cf-drum-from','cf-drum-to'), notes:document.getElementById('cf-notes').value.trim(), photo:cellarPhotoData, slot, added:cellarEditingId?(wines.find(w=>w.id===cellarEditingId)?.added||Date.now()):Date.now() };
@@ -1293,9 +1336,9 @@ async function restoreToCellar(id) {
   renderDrunk(); renderCellar();
 }
 // ── Drum year picker ──
-// 2 fillers each side, drum shows 5 items (height=220px), centre item is selected
+// 1 filler each side, drum shows 3 items (height=132px), centre item is selected
 const DRUM_ITEM_H = 44;
-const DRUM_FILLERS = 2;
+const DRUM_FILLERS = 1;
 
 function buildDrum(drumId, selectedYear, minYear) {
   const now = new Date().getFullYear();
@@ -1427,6 +1470,7 @@ function openWishForm(id) {
   resetPhotoArea('wish-photo-area','wish-photo-camera','wish-photo-gallery');
   ['wf-name','wf-winery','wf-variety','wf-vintage','wf-region','wf-state','wf-country','wf-notes','wf-where'].forEach(x=>{ const el=document.getElementById(x); if(el)el.value=''; });
   document.getElementById('wf-region-dd').classList.remove('open');
+  document.getElementById('wf-country-dd').classList.remove('open');
   document.getElementById('wf-price').value='';
   document.getElementById('wf-del-btn').style.display='none';
   if (id) {
@@ -1465,6 +1509,8 @@ async function saveWishWine() {
   if (variety && !varieties.includes(variety)) { varieties.push(variety); await saveFile('varieties.json', varieties); }
   const region=document.getElementById('wf-region').value.trim();
   if (region && !regions.includes(region)) { regions.push(region); await saveFile('regions.json', regions); }
+  const country=document.getElementById('wf-country').value.trim();
+  if (country && !countries.includes(country)) { countries.push(country); await saveFile('countries.json', countries); }
   const wine = { id:wishEditingId||`wish_${Date.now()}`, name, winery:document.getElementById('wf-winery').value.trim(), variety, vintage:document.getElementById('wf-vintage').value.trim(), region:document.getElementById('wf-region').value.trim(), state:document.getElementById('wf-state').value.trim(), country:document.getElementById('wf-country').value.trim(), price:document.getElementById('wf-price').value, notes:document.getElementById('wf-notes').value.trim(), where:document.getElementById('wf-where').value.trim(), photo:wishPhotoData };
   if (wishEditingId) { const i=wishlist.findIndex(w=>w.id===wishEditingId); wishlist[i]=wine; } else wishlist.push(wine);
   closeO('wish-form-overlay');
