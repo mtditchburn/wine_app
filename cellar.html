@@ -306,7 +306,6 @@ input[type=range] { width: 100%; accent-color: var(--red-wine); cursor: pointer;
         Drunk
       </div>
       <div class="header-right">
-        <span class="count-pill" id="drunk-count">0 bottles</span>
       </div>
     </div>
     <div class="search-wrap">
@@ -435,10 +434,14 @@ input[type=range] { width: 100%; accent-color: var(--red-wine); cursor: pointer;
       <button class="close-btn" onclick="closeO('cellar-form-overlay')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     </div>
     <div class="sheet-body">
-      <div class="photo-area" id="cellar-photo-area" onclick="triggerPhoto('cellar-photo-input')">
+      <div class="photo-area" id="cellar-photo-area">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        <span>Tap to add label photo</span>
-        <input type="file" accept="image/*" id="cellar-photo-input" style="display:none" onchange="handlePhoto(event,'cellar-photo-area','cellar-photo-input')">
+        <div style="display:flex;gap:8px;margin-top:2px;">
+          <button onclick="event.stopPropagation();triggerPhoto('cellar-photo-camera')" style="font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid var(--border-strong);background:var(--parchment2);color:var(--ink-soft);cursor:pointer;font-family:var(--font-sans);">📷 Camera</button>
+          <button onclick="event.stopPropagation();triggerPhoto('cellar-photo-gallery')" style="font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid var(--border-strong);background:var(--parchment2);color:var(--ink-soft);cursor:pointer;font-family:var(--font-sans);">🖼 Gallery</button>
+        </div>
+        <input type="file" accept="image/*" capture="environment" id="cellar-photo-camera" style="display:none" onchange="handlePhoto(event,'cellar-photo-area','cellar-photo-camera')">
+        <input type="file" accept="image/*" id="cellar-photo-gallery" style="display:none" onchange="handlePhoto(event,'cellar-photo-area','cellar-photo-gallery')">
       </div>
       <div class="field"><label>Wine name</label><input type="text" id="cf-name" placeholder="e.g. Mount Mary Quintet"></div>
       <div class="variety-wrap">
@@ -449,6 +452,10 @@ input[type=range] { width: 100%; accent-color: var(--red-wine); cursor: pointer;
       <div class="two-col">
         <div class="field"><label>Vintage</label><input type="text" id="cf-vintage" placeholder="2021 or NV"></div>
         <div class="field"><label>Region</label><input type="text" id="cf-region" placeholder="e.g. Barossa"></div>
+      </div>
+      <div class="two-col">
+        <div class="field"><label>State</label><input type="text" id="cf-state" placeholder="e.g. SA"></div>
+        <div class="field"><label>Country</label><input type="text" id="cf-country" placeholder="e.g. Australia"></div>
       </div>
       <div class="two-col">
         <div class="field"><label>Price paid ($)</label><input type="number" id="cf-price" placeholder="65"></div>
@@ -464,15 +471,16 @@ input[type=range] { width: 100%; accent-color: var(--red-wine); cursor: pointer;
         </select>
       </div>
       <div id="cf-loc-rack">
-        <div class="rack-section">
-          <label>Tap a slot to select position</label>
-          <div class="rack-col-labels" id="cf-rack-col-labels"></div>
-          <div class="rack-grid-wrap">
-            <div class="rack-row-lbls" id="cf-rack-row-lbls"></div>
-            <div class="rack-grid" id="cf-rack-grid"></div>
-          </div>
-          <div class="rack-hint" id="cf-rack-hint">No slot selected</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:10px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink-muted);">Tap a slot to select position</span>
+          <button onclick="document.activeElement.blur()" style="font-size:12px;padding:4px 10px;border-radius:6px;border:1px solid var(--border-strong);background:var(--parchment2);color:var(--ink-soft);cursor:pointer;font-family:inherit;">Hide keyboard</button>
         </div>
+        <div class="rack-col-labels" id="cf-rack-col-labels"></div>
+        <div class="rack-grid-wrap">
+          <div class="rack-row-lbls" id="cf-rack-row-lbls"></div>
+          <div class="rack-grid" id="cf-rack-grid"></div>
+        </div>
+        <div class="rack-hint" id="cf-rack-hint">No slot selected</div>
       </div>
       <button class="save-btn" onclick="saveCellarWine()">Save to cellar</button>
       <button class="del-btn" id="cf-del-btn" style="display:none" onclick="markDrunk(cellarEditingId)">We drank this — remove from cellar</button>
@@ -511,10 +519,14 @@ input[type=range] { width: 100%; accent-color: var(--red-wine); cursor: pointer;
       <button class="close-btn" onclick="closeO('wish-form-overlay')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     </div>
     <div class="sheet-body">
-      <div class="photo-area" id="wish-photo-area" onclick="triggerPhoto('wish-photo-input')">
+      <div class="photo-area" id="wish-photo-area">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        <span>Tap to add label photo</span>
-        <input type="file" accept="image/*" id="wish-photo-input" style="display:none" onchange="handlePhoto(event,'wish-photo-area','wish-photo-input')">
+        <div style="display:flex;gap:8px;margin-top:2px;">
+          <button onclick="event.stopPropagation();triggerPhoto('wish-photo-camera')" style="font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid var(--border-strong);background:var(--parchment2);color:var(--ink-soft);cursor:pointer;font-family:var(--font-sans);">📷 Camera</button>
+          <button onclick="event.stopPropagation();triggerPhoto('wish-photo-gallery')" style="font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid var(--border-strong);background:var(--parchment2);color:var(--ink-soft);cursor:pointer;font-family:var(--font-sans);">🖼 Gallery</button>
+        </div>
+        <input type="file" accept="image/*" capture="environment" id="wish-photo-camera" style="display:none" onchange="handlePhoto(event,'wish-photo-area','wish-photo-camera')">
+        <input type="file" accept="image/*" id="wish-photo-gallery" style="display:none" onchange="handlePhoto(event,'wish-photo-area','wish-photo-gallery')">
       </div>
       <div class="field"><label>Wine name</label><input type="text" id="wf-name" placeholder="e.g. Giaconda Chardonnay"></div>
       <div class="variety-wrap">
@@ -525,6 +537,10 @@ input[type=range] { width: 100%; accent-color: var(--red-wine); cursor: pointer;
       <div class="two-col">
         <div class="field"><label>Vintage</label><input type="text" id="wf-vintage" placeholder="2021 or NV"></div>
         <div class="field"><label>Region</label><input type="text" id="wf-region" placeholder="e.g. Yarra Valley"></div>
+      </div>
+      <div class="two-col">
+        <div class="field"><label>State</label><input type="text" id="wf-state" placeholder="e.g. VIC"></div>
+        <div class="field"><label>Country</label><input type="text" id="wf-country" placeholder="e.g. Australia"></div>
       </div>
       <div class="two-col">
         <div class="field"><label>Approx. price ($)</label><input type="number" id="wf-price" placeholder="Optional"></div>
@@ -796,12 +812,11 @@ function handlePhoto(e, areaId, inputId) {
   };
   reader.readAsDataURL(file);
 }
-function resetPhotoArea(areaId, inputId, label) {
-  document.getElementById(areaId).innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><span>${label}</span><input type="file" accept="image/*" id="${inputId}" style="display:none" onchange="handlePhoto(event,'${areaId}','${inputId}')">`;
+function resetPhotoArea(areaId, cameraId, galleryId) {
+  document.getElementById(areaId).innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><div style="display:flex;gap:8px;margin-top:2px;"><button onclick="event.stopPropagation();triggerPhoto('${cameraId}')" style="font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid var(--border-strong);background:var(--parchment2);color:var(--ink-soft);cursor:pointer;">📷 Camera</button><button onclick="event.stopPropagation();triggerPhoto('${galleryId}')" style="font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid var(--border-strong);background:var(--parchment2);color:var(--ink-soft);cursor:pointer;">🖼 Gallery</button></div><input type="file" accept="image/*" capture="environment" id="${cameraId}" style="display:none" onchange="handlePhoto(event,'${areaId}','${cameraId}')"><input type="file" accept="image/*" id="${galleryId}" style="display:none" onchange="handlePhoto(event,'${areaId}','${galleryId}')">`;
 }
-function setPhotoArea(areaId, inputId, photo) {
-  if (!photo) return;
-  document.getElementById(areaId).innerHTML = `<img src="${photo}" alt="Label photo"><button class="photo-change" onclick="event.stopPropagation();triggerPhoto('${inputId}')">Change</button><input type="file" accept="image/*" id="${inputId}" style="display:none" onchange="handlePhoto(event,'${areaId}','${inputId}')">`;
+function setPhotoArea(areaId, cameraId, galleryId, photo) {
+  document.getElementById(areaId).innerHTML = `<img src="${photo}" alt="Label photo"><div style="position:absolute;bottom:8px;right:8px;display:flex;gap:5px;"><button class="photo-change" onclick="event.stopPropagation();triggerPhoto('${cameraId}')">📷</button><button class="photo-change" onclick="event.stopPropagation();triggerPhoto('${galleryId}')">🖼</button></div><input type="file" accept="image/*" capture="environment" id="${cameraId}" style="display:none" onchange="handlePhoto(event,'${areaId}','${cameraId}')"><input type="file" accept="image/*" id="${galleryId}" style="display:none" onchange="handlePhoto(event,'${areaId}','${galleryId}')">`;
 }
 
 // ── Variety autocomplete ──
@@ -931,7 +946,6 @@ function renderCellar() {
 function renderDrunk() {
   const q = document.getElementById('drunk-search').value.toLowerCase();
   const fw = getFiltered(drunk, drunkChip, false, morePriceStep, moreVarieties, moreUnrated, q);
-  document.getElementById('drunk-count').textContent = `${drunk.length} bottle${drunk.length!==1?'s':''}`;
   const el = document.getElementById('drunk-list');
   if (!fw.length) { el.innerHTML = `<div class="empty">${bottleSvg()}<div class="empty-title">${drunk.length===0?'Nothing here yet':'No wines match'}</div><div class="empty-sub">${drunk.length===0?'Wines you drink will appear here.':'Try adjusting your filters.'}</div></div>`; return; }
   const wishIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
@@ -952,8 +966,8 @@ function renderWish() {
 function openCellarForm(id) {
   cellarEditingId = id;
   cellarPhotoData = null; cellarSlot = null;
-  resetPhotoArea('cellar-photo-area','cellar-photo-input','Tap to add label photo');
-  ['cf-name','cf-variety','cf-vintage','cf-region','cf-notes','cf-window'].forEach(x=>{ const el=document.getElementById(x); if(el)el.value=''; });
+  resetPhotoArea('cellar-photo-area','cellar-photo-camera','cellar-photo-gallery');
+  ['cf-name','cf-variety','cf-vintage','cf-region','cf-state','cf-country','cf-notes','cf-window'].forEach(x=>{ const el=document.getElementById(x); if(el)el.value=''; });
   document.getElementById('cf-price').value='';
   document.getElementById('cf-loc-type').value='rack';
   document.getElementById('cf-del-btn').style.display='none';
@@ -964,11 +978,13 @@ function openCellarForm(id) {
     document.getElementById('cf-variety').value=w.variety||'';
     document.getElementById('cf-vintage').value=w.vintage||'';
     document.getElementById('cf-region').value=w.region||'';
+    document.getElementById('cf-state').value=w.state||'';
+    document.getElementById('cf-country').value=w.country||'';
     document.getElementById('cf-price').value=w.price||'';
     document.getElementById('cf-window').value=w.window||'';
     document.getElementById('cf-notes').value=w.notes||'';
     document.getElementById('cf-del-btn').style.display='';
-    if (w.photo) { cellarPhotoData=w.photo; setPhotoArea('cellar-photo-area','cellar-photo-input',w.photo); }
+    if (w.photo) { cellarPhotoData=w.photo; setPhotoArea('cellar-photo-area','cellar-photo-camera','cellar-photo-gallery',w.photo); }
     if (w.slot) { document.getElementById('cf-loc-type').value=w.slot.type; if(w.slot.type==='rack') cellarSlot=w.slot; }
   } else {
     document.getElementById('cellar-form-title').textContent='Add a wine';
@@ -989,7 +1005,7 @@ async function saveCellarWine() {
   if (variety && !varieties.includes(variety)) { varieties.push(variety); await saveFile('varieties.json', varieties); }
   const locType = document.getElementById('cf-loc-type').value;
   const slot = locType==='rack' ? (cellarSlot||{type:'rack'}) : {type:locType};
-  const wine = { id:cellarEditingId||`w_${Date.now()}`, name, variety, vintage:document.getElementById('cf-vintage').value.trim(), region:document.getElementById('cf-region').value.trim(), price:document.getElementById('cf-price').value, window:document.getElementById('cf-window').value.trim(), notes:document.getElementById('cf-notes').value.trim(), photo:cellarPhotoData, slot, added:cellarEditingId?(wines.find(w=>w.id===cellarEditingId)?.added||Date.now()):Date.now() };
+  const wine = { id:cellarEditingId||`w_${Date.now()}`, name, variety, vintage:document.getElementById('cf-vintage').value.trim(), region:document.getElementById('cf-region').value.trim(), state:document.getElementById('cf-state').value.trim(), country:document.getElementById('cf-country').value.trim(), price:document.getElementById('cf-price').value, window:document.getElementById('cf-window').value.trim(), notes:document.getElementById('cf-notes').value.trim(), photo:cellarPhotoData, slot, added:cellarEditingId?(wines.find(w=>w.id===cellarEditingId)?.added||Date.now()):Date.now() };
   if (cellarEditingId) { const i=wines.findIndex(w=>w.id===cellarEditingId); wines[i]=wine; } else wines.push(wine);
   closeO('cellar-form-overlay');
   await saveFile('wines.json', wines);
@@ -1103,8 +1119,8 @@ function openRateSheet(id) {
 function openWishForm(id) {
   wishEditingId = id;
   wishPhotoData = null;
-  resetPhotoArea('wish-photo-area','wish-photo-input','Tap to add label photo');
-  ['wf-name','wf-variety','wf-vintage','wf-region','wf-notes','wf-where'].forEach(x=>{ const el=document.getElementById(x); if(el)el.value=''; });
+  resetPhotoArea('wish-photo-area','wish-photo-camera','wish-photo-gallery');
+  ['wf-name','wf-variety','wf-vintage','wf-region','wf-state','wf-country','wf-notes','wf-where'].forEach(x=>{ const el=document.getElementById(x); if(el)el.value=''; });
   document.getElementById('wf-price').value='';
   document.getElementById('wf-del-btn').style.display='none';
   if (id) {
@@ -1114,11 +1130,13 @@ function openWishForm(id) {
     document.getElementById('wf-variety').value=w.variety||'';
     document.getElementById('wf-vintage').value=w.vintage||'';
     document.getElementById('wf-region').value=w.region||'';
+    document.getElementById('wf-state').value=w.state||'';
+    document.getElementById('wf-country').value=w.country||'';
     document.getElementById('wf-price').value=w.price||'';
     document.getElementById('wf-notes').value=w.notes||'';
     document.getElementById('wf-where').value=w.where||'';
     document.getElementById('wf-del-btn').style.display='';
-    if (w.photo) { wishPhotoData=w.photo; setPhotoArea('wish-photo-area','wish-photo-input',w.photo); }
+    if (w.photo) { wishPhotoData=w.photo; setPhotoArea('wish-photo-area','wish-photo-camera','wish-photo-gallery',w.photo); }
   } else {
     document.getElementById('wish-form-title').textContent='Add to wish list';
   }
@@ -1138,7 +1156,7 @@ async function saveWishWine() {
   if (!name) { alert('Please enter a wine name.'); return; }
   const variety=document.getElementById('wf-variety').value.trim();
   if (variety && !varieties.includes(variety)) { varieties.push(variety); await saveFile('varieties.json', varieties); }
-  const wine = { id:wishEditingId||`wish_${Date.now()}`, name, variety, vintage:document.getElementById('wf-vintage').value.trim(), region:document.getElementById('wf-region').value.trim(), price:document.getElementById('wf-price').value, notes:document.getElementById('wf-notes').value.trim(), where:document.getElementById('wf-where').value.trim(), photo:wishPhotoData };
+  const wine = { id:wishEditingId||`wish_${Date.now()}`, name, variety, vintage:document.getElementById('wf-vintage').value.trim(), region:document.getElementById('wf-region').value.trim(), state:document.getElementById('wf-state').value.trim(), country:document.getElementById('wf-country').value.trim(), price:document.getElementById('wf-price').value, notes:document.getElementById('wf-notes').value.trim(), where:document.getElementById('wf-where').value.trim(), photo:wishPhotoData };
   if (wishEditingId) { const i=wishlist.findIndex(w=>w.id===wishEditingId); wishlist[i]=wine; } else wishlist.push(wine);
   closeO('wish-form-overlay');
   await saveFile('wishlist.json', wishlist);
